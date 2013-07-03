@@ -1,7 +1,7 @@
 Followings
 ==========
 
-with this script you can see who (un)followed you
+with this script you can see who (un)followed you on Twitter
 
 
 Before you can use this script you have to create a new Twitter-Application on https://dev.twitter.com/apps/new.
