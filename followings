@@ -51,7 +51,7 @@ def printUsers(user_id_list):
 			print '%s (@%s)' % (user.name, user.screen_name)
 
 def plural(n):
-	if n > 1:
+	if n == 1:
 		return 's'
 	return ''
 
