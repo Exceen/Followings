@@ -52,8 +52,8 @@ def printUsers(user_id_list):
 
 def plural(n):
 	if n == 1:
-		return 's'
-	return ''
+		return ''
+	return 's'
 
 if __name__ == '__main__':
 	main()
