@@ -10,4 +10,5 @@ Create your Access-Keys and replace the 4 keys in the script with the ones from 
 You also have to install tweepy if you want to run the script.
 https://github.com/tweepy/tweepy
 
-(c) Exceen 2013
+(c) 2013 Exceen
+
