@@ -43,9 +43,12 @@ def writeFollowersToFile(followers_list):
 	followers_file.close()
 
 def printUsers(user_id_list):
-	for user_id in user_id_list:
-		user = api.get_user(user_id)
-		print '%s (@%s)' % (user.name, user.screen_name)
+	if len(user_id_list) == 0:
+		print 'none'
+	else:
+		for user_id in user_id_list:
+			user = api.get_user(user_id)
+			print '%s (@%s)' % (user.name, user.screen_name)
 
 def plural(n):
 	if n > 1:
