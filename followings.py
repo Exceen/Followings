@@ -9,7 +9,7 @@ auth.set_access_token('Access token', 'Access token secret')
 api = tweepy.API(auth)
 
 def main():
-  followers = api.followers_ids()
+	followers = api.followers_ids()
 	print 'You have currently %d followers.' % len(followers)
 
 	if exists('followers.txt'):
