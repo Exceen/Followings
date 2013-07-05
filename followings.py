@@ -17,26 +17,30 @@ except tweepy.error.TweepError, err:
 	exit()
 
 def main():
+	followers_file = 'followers.txt'
 
-	followers_file = 'followers'
-
-	parser = argparse.ArgumentParser(description='Followings v1.1')
+	parser = argparse.ArgumentParser(description='Followings')
 	parser.add_argument('-f', '--followers', action='store_true', help='lists all followers')
-	parser.add_argument('user', metavar='username', type=str, nargs='?', help='use another username instead of yours')
+	parser.add_argument('user', metavar='username', type=str, nargs='?', help='use the given username instead of yours')
 	args = parser.parse_args()
 
 	user = api.me().screen_name
 	if args.user:
 		user = args.user
-		followers_file += '.' + user
+		followers_file = user + '_' + followers_file
 
-	followers = api.followers_ids(user)
-	print 'You have currently %d followers.' % len(followers)
+	try:
+		followers = api.followers_ids(user)
+	except tweepy.error.TweepError, err:
+		print err.reason
+		exit()
+
+	print '%s currently %d followers.' % ('@' + user + ' has' if args.user else 'You have', len(followers))
+	
 
 	if args.followers:
 		printUsers(followers)
 		exit()
-
 
 	if exists(followers_file):
 		recent_followers = [line.strip() for line in open(followers_file)]
@@ -72,7 +76,11 @@ def printUsers(user_id_list):
 		print 'none'
 	else:
 		for user_id in user_id_list:
-			user = api.get_user(user_id)
+			try:
+				user = api.get_user(user_id)
+			except tweepy.error.TweepError, err:
+				print err.reason
+				exit()
 			print '%s (@%s)' % (user.name, user.screen_name)
 
 def plural(n):
@@ -82,3 +90,6 @@ def plural(n):
 
 if __name__ == '__main__':
 	main()
+
+
+
