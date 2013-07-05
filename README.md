@@ -1,8 +1,8 @@
 Followings
 ==========
 
-with this script you can see who (un)followed you and your friends on Twitter
-it is also possible to list all followers of you and your friends
+You can see who (un)followed you and your friends on Twitter with this script.
+It is also possible to list all followers of you and your friends
 
 usage: followings.py [-h] [-f] [username]
 
