@@ -2,37 +2,52 @@
 # (c) 2013 Exceen
 
 import tweepy
-import argparse
+import argparse, logging
+import os
 from os.path import exists
 
-try:
-	auth = tweepy.OAuthHandler('Consumer key', 'Consumer secret')
-	auth.set_access_token('Access token', 'Access token secret')
-	api = tweepy.API(auth)
-	api.me()
-except tweepy.error.TweepError, err:
-	print err.reason
-	if 'invalid oauth token' in err.reason:
-		print 'Please check you consumer and access keys!'
-	exit()
+consumer_key = 'Consumer key'
+consumer_secret = 'Consumer secret'
+access_token = 'Access token'
+access_token_secret = 'Acces token secret'
 
 def main():
 	followers_file = 'followers.txt'
 
 	parser = argparse.ArgumentParser(description='Followings')
+	parser.add_argument('-v', '--verbose', action='store_true')
 	parser.add_argument('-f', '--followers', action='store_true', help='lists all followers')
 	parser.add_argument('user', metavar='username', type=str, nargs='?', help='use the given username instead of yours')
 	args = parser.parse_args()
 
-	user = api.me().screen_name
+	if args.verbose:
+		level = logging.DEBUG if args.verbose else logging.INFO
+		logging.basicConfig(filename = 'debug.log', filemode='w', level = level, format='[%(asctime)s] %(message)s', datefmt='%I:%M:%S %p')
+
+	try:
+		auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
+		auth.set_access_token(access_token, access_token_secret)
+		api = tweepy.API(auth)
+		user = api.me().screen_name
+
+		logging.debug('Authentication successful (logged in as @%s)' % user)
+	except tweepy.error.TweepError, err:
+		print err.reason
+		if 'invalid oauth token' in err.reason:
+			print 'Please check you consumer and access keys!'
+		logging.debug(err.reason)
+		exit()
+
 	if args.user:
 		user = args.user
 		followers_file = user + '_' + followers_file
 
 	try:
 		followers = api.followers_ids(user)
+		logging.debug('Follower ids loaded')
 	except tweepy.error.TweepError, err:
 		print err.reason
+		logging.debug(err.reason)
 		exit()
 
 	print '%s currently %d followers.' % ('@' + user + ' has' if args.user else 'You have', len(followers))
@@ -50,7 +65,9 @@ def main():
 			current_followers.append(str(user))
 
 		unfollowers = list(set(recent_followers) - set(current_followers))
+		logging.debug('Calculated unfollwers')
 		new_followers = list(set(current_followers) - set(recent_followers))
+		logging.debug('Calculated new followers')
 
 		print '\nunfollowers:'
 		printUsers(unfollowers)
@@ -58,10 +75,9 @@ def main():
 		print '\nnew followers:'
 		printUsers(new_followers)
 
-		print '\n\nYou lost %d follower%s and got %d new follower%s.' % (len(unfollowers), plural(len(unfollowers)), len(new_followers), plural(len(new_followers)))
-
+		print '\n\nYou lost %d follower%s and got %d new follower%s.' % (len(unfollowers), '' if len(unfollowers) == 1 else 's', len(new_followers), '' if len(unfollowers) == 1 else 's')
 	else:
-		print 'I just created a file so that I have something to compare when you check your followings next time.'
+		print 'I\'ll just create a file so that I have something to compare when you check your followings next time.'
 
 	writeFollowersToFile(followers, followers_file)
 
@@ -74,19 +90,17 @@ def writeFollowersToFile(followers_list, followers_file):
 def printUsers(user_id_list):
 	if len(user_id_list) == 0:
 		print 'none'
+		logging.debug('Printed user id list, but was empty')
 	else:
 		for user_id in user_id_list:
 			try:
 				user = api.get_user(user_id)
 			except tweepy.error.TweepError, err:
 				print err.reason
+				logging.debug(err.reason)
 				exit()
 			print '%s (@%s)' % (user.name, user.screen_name)
-
-def plural(n):
-	if n == 1:
-		return ''
-	return 's'
+		logging.debug('Printed user id list')
 
 if __name__ == '__main__':
 	main()
