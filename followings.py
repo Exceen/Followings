@@ -70,10 +70,10 @@ def main():
 		logging.debug('Calculated new followers')
 
 		print '\nunfollowers:'
-		printUsers(unfollowers)
+		printUsers(unfollowers, api)
 
 		print '\nnew followers:'
-		printUsers(new_followers)
+		printUsers(new_followers, api)
 
 		print '\n\nYou lost %d follower%s and got %d new follower%s.' % (len(unfollowers), '' if len(unfollowers) == 1 else 's', len(new_followers), '' if len(unfollowers) == 1 else 's')
 	else:
@@ -87,7 +87,7 @@ def writeFollowersToFile(followers_list, followers_file):
 		file_to_write.write('%d\n' % user)
 	file_to_write.close()
 
-def printUsers(user_id_list):
+def printUsers(user_id_list, api):
 	if len(user_id_list) == 0:
 		print 'none'
 		logging.debug('Printed user id list, but was empty')
