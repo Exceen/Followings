@@ -22,7 +22,7 @@ def main():
 
 	if args.verbose:
 		level = logging.DEBUG if args.verbose else logging.INFO
-		logging.basicConfig(filename = 'debug.log', filemode='w', level = level, format='[%(asctime)s] %(message)s', datefmt='%I:%M:%S %p')
+		logging.basicConfig(filename = 'debug.log', filemode='a', level = level, format='[%(asctime)s] %(message)s', datefmt='%I:%M:%S %p')
 
 	try:
 		auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
@@ -83,6 +83,7 @@ def main():
 		print 'I\'ll just create a file so that I have something to compare when you check your followings next time.'
 
 	writeFollowersToFile(followers, followers_file)
+	logging.debug('Created new followers file')
 
 def writeFollowersToFile(followers_list, followers_file):
 	file_to_write = open(followers_file, 'w')
