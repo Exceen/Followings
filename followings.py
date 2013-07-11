@@ -39,8 +39,11 @@ def main():
 		exit()
 
 	if args.user:
-		user = args.user
-		followers_file = user + '_' + followers_file
+		if user != args.user:
+			user = args.user
+			followers_file = user + '_' + followers_file
+		else:
+			args.user = False
 
 	try:
 		followers = api.followers_ids(user)
