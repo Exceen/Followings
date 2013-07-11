@@ -57,7 +57,7 @@ def main():
 	
 
 	if args.followers:
-		printUsers(followers)
+		printUsers(followers, api)
 		exit()
 
 	if exists(followers_file):
@@ -93,7 +93,7 @@ def writeFollowersToFile(followers_list, followers_file):
 def printUsers(user_id_list, api):
 	if len(user_id_list) == 0:
 		print 'none'
-		logging.debug('Printed user id list, but was empty')
+		logging.debug('Tried to print user id list, but was empty')
 	else:
 		for user_id in user_id_list:
 			try:
