@@ -62,10 +62,7 @@ def main():
 
 	if exists(followers_file):
 		recent_followers = [line.strip() for line in open(followers_file)]
-
-		current_followers = []
-		for user in followers:
-			current_followers.append(str(user))
+		current_followers = [str(user) for user in followers]
 
 		unfollowers = list(set(recent_followers) - set(current_followers))
 		logging.debug('Calculated unfollwers')
@@ -86,10 +83,8 @@ def main():
 	logging.debug('Created new followers file')
 
 def writeFollowersToFile(followers_list, followers_file):
-	file_to_write = open(followers_file, 'w')
-	for user in followers_list:
-		file_to_write.write('%d\n' % user)
-	file_to_write.close()
+	with open(followers_file, 'w') as f:
+		[f.write('%d\n' % user) for user in followers_list]
 
 def printUsers(user_id_list, api):
 	if len(user_id_list) == 0:
