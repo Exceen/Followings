@@ -23,10 +23,17 @@ def main():
     if args.user and user != args.user:
         user = api.get_user(args.user).screen_name
 
-    workpath = sys.path[0] + '/data/'
-    database_file = workpath + 'followers.db'
-    followers_file = workpath + user + '_' + 'followers.txt'
-    followings_file = workpath + user + '_' + 'followings.txt'
+    workpath = join(os.getcwd(), 'data')
+    database_file = join(workpath, 'followers.db')
+    followers_file = join(workpath, user + '_followers')
+    followings_file = join(workpath, user + '_followings')
+
+    # workpath = sys.path[0] + '/data/'
+    # database_file = workpath + 'followers.db'
+    # followers_file = workpath + user + '_' + 'followers.txt'
+    # followings_file = workpath + user + '_' + 'followings.txt'
+    if not exists(workpath):
+        makedirs(workpath)
 
     followed = api.friends_ids(user)
     followers = api.followers_ids(user)
@@ -51,21 +58,23 @@ def login():
     auth.set_access_token(access_token, access_token_secret)
     return tweepy.API(auth) #api
 def check_f(user_id_list, user, f_file, string1, string2):
+    current_f = [str(user) for user in user_id_list]
     if exists(f_file):
         recent_f = [line.strip() for line in open(f_file)]
-        current_f = [str(user) for user in user_id_list]
+    else:
+        recent_f = current_f
 
-        un_f = list(set(recent_f) - set(current_f))
-        new_f = list(set(current_f) - set(recent_f))
-        un_f = [item for item in un_f if item] # to remove empty strings, no clue why there are empty strings in this list
+    un_f = list(set(recent_f) - set(current_f))
+    new_f = list(set(current_f) - set(recent_f))
+    un_f = [item for item in un_f if item] # to remove empty strings, no clue why there are empty strings in this list
 
-        print '\n%s(%d):' % (string1, len(un_f))
-        print_users(un_f)
+    print '\n%s(%d):' % (string1, len(un_f))
+    print_users(un_f)
 
-        print '\n%s(%d):' % (string2, len(new_f))
-        print_users(new_f)
+    print '\n%s(%d):' % (string2, len(new_f))
+    print_users(new_f)
 
-        update_database(new_f)
+    update_database(new_f)
         
     write_list_to_file(user_id_list, f_file)
 def write_list_to_file(a_list, a_file):
