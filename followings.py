@@ -1,8 +1,10 @@
 #!/usr/bin/python
+# (c) 2015 Exceen
 import tweepy
 import argparse
 import os, sys
-from os.path import exists
+from os.path import exists, join
+from os import makedirs
 
 consumer_key = 'Consumer key'
 consumer_secret = 'Consumer secret'
@@ -23,15 +25,11 @@ def main():
     if args.user and user != args.user:
         user = api.get_user(args.user).screen_name
 
-    workpath = join(os.getcwd(), 'data')
+    workpath = join(os.path.dirname(os.path.realpath(__file__)), 'data')
     database_file = join(workpath, 'followers.db')
     followers_file = join(workpath, user + '_followers')
     followings_file = join(workpath, user + '_followings')
 
-    # workpath = sys.path[0] + '/data/'
-    # database_file = workpath + 'followers.db'
-    # followers_file = workpath + user + '_' + 'followers.txt'
-    # followings_file = workpath + user + '_' + 'followings.txt'
     if not exists(workpath):
         makedirs(workpath)
 
@@ -88,7 +86,7 @@ def print_users(user_id_list):
                 print '%s (@%s)' % (user.name, user.screen_name)
             except tweepy.error.TweepError, err:
                 err = err[0][0]
-                print '%s; user_id: %s, username: %s' % (err['message'], user_id, get_username_from_database(user_id))
+                print 'user_id: %s, username: %s' % (user_id, get_username_from_database(user_id))
     else:
         print 'none'
 def update_database(user_id_list):
