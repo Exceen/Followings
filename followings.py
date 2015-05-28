@@ -107,7 +107,7 @@ def main():
 
     account = TwitterAccount(consumer_key, consumer_secret, access_token, access_token_secret)
     if args.user and account.get_username() != args.user:
-        followings.account.username = args.user
+        account.username = args.user
 
     followings = Followings(account)
     if args.create_db:
