@@ -2,117 +2,150 @@
 # (c) 2015 Exceen
 import tweepy
 import argparse
-import os, sys
-from os.path import exists, join
-from os import makedirs
+from os import makedirs, path
 
-consumer_key = 'Consumer key'
-consumer_secret = 'Consumer secret'
-access_token = 'Access token'
-access_token_secret = 'Acces token secret'
+consumer_key = 'consumer_key'
+consumer_secret = 'consumer_secret'
+access_token = 'access_token'
+access_token_secret = 'access_token_secret'
 
-database_file = None
-api = None
+class TwitterAccount(object):
+    def __init__(self, consumer_key, consumer_secret, access_token, access_token_secret):
+        auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
+        auth.set_access_token(access_token, access_token_secret)
+        self.api = tweepy.API(auth)
+
+        self.username = None
+        self.friends = None
+        self.followers = None
+
+    def get_username(self):
+        if self.username == None:
+            self.username = self.api.me().screen_name
+        return self.username
+
+    def get_friends(self):
+        if self.friends == None:
+            self.friends = [str(friend) for friend in self.api.friends_ids(self.get_username())]
+        return self.friends
+
+    def get_followers(self):
+        if self.followers == None:
+            self.followers = [str(follower) for follower in self.api.followers_ids(self.get_username())]
+        return self.followers
+
+class Followings(object):
+
+    def __init__(self, account):
+        self.account = account
+        self.workpath = path.join(path.dirname(path.realpath(__file__)), 'data')
+        self.database_file = path.join(self.workpath, 'followers.db')
+        self.friends_file = path.join(self.workpath, self.account.get_username() + '_friends')
+        self.followers_file = path.join(self.workpath, self.account.get_username() + '_followers')
+
+        if not path.exists(self.workpath):
+            makedirs(self.workpath)
+
+        self.friends_from_db = None
+        self.followers_from_db = None
+        
+    def get_username_from_database(self, user_id):
+        db = []
+        if path.exists(self.database_file):
+            db = [line.strip() for line in open(self.database_file, 'r')]
+        for record in db:
+            if str(user_id) in record:
+                return record.split('|')[-1]
+        return None
+
+    def get_friends_from_database(self):
+        if self.friends_from_db == None:
+            if path.exists(self.friends_file):
+                self.friends_from_db = [line.strip() for line in open(self.friends_file)]
+            else:
+                self.friends_from_db = self.account.get_friends()
+        return self.friends_from_db
+
+    def get_followers_from_database(self):
+        if self.followers_from_db == None:
+            if path.exists(self.followers_file):
+                self.followers_from_db = [line.strip() for line in open(self.followers_file)]
+            else:
+                self.followers_from_db = self.account.get_followers()
+        return self.followers_from_db
+
+    def update_database(self, user_id_list):
+        db = []
+        if path.exists(self.database_file):
+            db = [line.strip() for line in open(self.database_file, 'r')]
+
+        user_id_list.append(self.account.get_username())
+        for user_id in user_id_list:
+            user_id = str(user_id)
+            if not any(user_id in data for data in db):
+                try:
+                    data_set = user_id + '|' + str(self.account.api.get_user(user_id).screen_name)
+                    db.append(data_set)
+                except tweepy.error.TweepError, err:
+                    continue
+
+        with open(self.database_file, 'w') as f:
+            [f.write('%s\n' % item) for item in db]
+
+    def save_followings(self):
+        with open(self.friends_file, 'w') as f:
+            [f.write('%s\n' % item) for item in self.account.get_friends()]
+        with open(self.followers_file, 'w') as f:
+            [f.write('%s\n' % item) for item in self.account.get_followers()]
+        self.update_database(self.account.get_friends() + self.account.get_followers())
 
 def main():
-    global api
-    global database_file
+    parser = argparse.ArgumentParser(description='Followings')
+    parser.add_argument('-d', '--create-db', action='store_true', help='creates a complete database of your followers (ratelimit)')
+    parser.add_argument('user', metavar='username', type=str, nargs='?', help='use the given username instead of yours')
+    args = parser.parse_args()
 
-    args = create_arguments()
-    api = login()
-    user = api.me().screen_name
+    account = TwitterAccount(consumer_key, consumer_secret, access_token, access_token_secret)
+    if args.user and account.get_username() != args.user:
+        followings.account.username = args.user
 
-    if args.user and user != args.user:
-        user = api.get_user(args.user).screen_name
-
-    workpath = join(os.path.dirname(os.path.realpath(__file__)), 'data')
-    database_file = join(workpath, 'followers.db')
-    followers_file = join(workpath, user + '_followers')
-    followings_file = join(workpath, user + '_followings')
-
-    if not exists(workpath):
-        makedirs(workpath)
-
-    followed = api.friends_ids(user)
-    followers = api.followers_ids(user)
-
+    followings = Followings(account)
     if args.create_db:
-        update_database(followers + followed)
+        followings.update_database(followings.account.get_friends() + followings.account.get_followers())
         exit()
 
-    print '%s currently follow%s %d people and %s %d followers.' % ('@' + user if args.user else 'You', 's' if args.user else '', len(followed), 'has' if args.user else 'have', len(followers))
+    ####
 
-    check_f(followers, user, followers_file, 'unfollowers', 'new followers')
-    check_f(followed, user, followings_file, 'unfollowed', 'newly followed')
+    current_friends = followings.account.get_friends()
+    current_followers = followings.account.get_followers()
+    previous_friends = followings.get_friends_from_database()
+    previous_followers = followings.get_followers_from_database()
+
+    unfollowed_friends = list(set(previous_friends) - set(current_friends))
+    new_friends = list(set(current_friends) - set(previous_friends))
+    unfollowers = list(set(previous_followers) - set(current_followers))
+    new_followers = list(set(current_followers) - set(previous_followers))
+
+    followings.save_followings()
+
+    ####
+
+    print '@' + account.get_username(), '| Following:', len(followings.account.get_friends()), '| Followers:', len(followings.account.get_followers())
+
+    print '\nUnfollowers(%d):' % len(unfollowers)
+    print '\n'.join([followings.get_username_from_database(user_id) for user_id in unfollowers])
+
+    print '\nNew Followers(%d):' % len(new_followers)
+    print '\n'.join([followings.get_username_from_database(user_id) for user_id in new_followers])
+
+    print '\nUnfollowed Friends(%d):' % len(unfollowed_friends)
+    print '\n'.join([followings.get_username_from_database(user_id) for user_id in unfollowed_friends])
+
+    print '\nNew Friends(%d):' % len(new_friends)
+    print '\n'.join([followings.get_username_from_database(user_id) for user_id in new_friends])
+
     print ''
-def create_arguments():
-    parser = argparse.ArgumentParser(description='Followings')
-    parser.add_argument('-d', '--create-db', action='store_true', help='creates a complete database of your followers; you probably need to call this a few times every few minutes')
-    # parser.add_argument('-v', '--verbose', action='store_true')
-    parser.add_argument('user', metavar='username', type=str, nargs='?', help='use the given username instead of yours')
-    return parser.parse_args()
-def login():
-    auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
-    auth.set_access_token(access_token, access_token_secret)
-    return tweepy.API(auth) #api
-def check_f(user_id_list, user, f_file, string1, string2):
-    current_f = [str(user) for user in user_id_list]
-    if exists(f_file):
-        recent_f = [line.strip() for line in open(f_file)]
-    else:
-        recent_f = current_f
 
-    un_f = list(set(recent_f) - set(current_f))
-    new_f = list(set(current_f) - set(recent_f))
-    un_f = [item for item in un_f if item] # to remove empty strings, no clue why there are empty strings in this list
-
-    print '\n%s(%d):' % (string1, len(un_f))
-    print_users(un_f)
-
-    print '\n%s(%d):' % (string2, len(new_f))
-    print_users(new_f)
-
-    update_database(new_f)
-        
-    write_list_to_file(user_id_list, f_file)
-def write_list_to_file(a_list, a_file):
-    with open(a_file, 'w') as f:
-        [f.write('%s\n' % item) for item in a_list]
-def print_users(user_id_list):
-    if len(user_id_list) > 0:
-        for user_id in user_id_list:
-            try:
-                user = api.get_user(user_id)
-                print '%s (@%s)' % (user.name, user.screen_name)
-            except tweepy.error.TweepError, err:
-                err = err[0][0]
-                print 'user_id: %s, username: %s' % (user_id, get_username_from_database(user_id))
-    else:
-        print 'none'
-def update_database(user_id_list):
-    db = []
-    if os.path.exists(database_file):
-        db = [line.strip() for line in open(database_file, 'r')]
-
-    user_id_list.append(api.me().id)
-    for user_id in user_id_list:
-        user_id = str(user_id)
-        if not any(user_id in data for data in db):
-            try:
-                data_set = user_id + '|' + str(api.get_user(user_id).screen_name)
-                db.append(data_set)
-            except tweepy.error.TweepError, err:
-                continue
-    write_list_to_file(db, database_file)
-def get_username_from_database(user_id):
-    if exists(database_file):
-        db = [line.strip() for line in open(database_file, 'r')]
-    else:
-        return 'no database found'
-    for element in db:
-        if str(user_id) in element:
-            return element.split('|')[-1]
-    return 'no username found'
 
 if __name__ == '__main__':
     main()
