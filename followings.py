@@ -24,6 +24,11 @@ class TwitterAccount(object):
             self.username = self.api.me().screen_name
         return self.username
 
+    def set_username(self, username):
+        self.username = self.api.get_user(username).screen_name
+        self.friends = None
+        self.followers = None
+
     def get_friends(self):
         if self.friends == None:
             self.friends = [str(friend) for friend in self.api.friends_ids(self.get_username())]
@@ -33,22 +38,19 @@ class TwitterAccount(object):
         if self.followers == None:
             self.followers = [str(follower) for follower in self.api.followers_ids(self.get_username())]
         return self.followers
-
 class Followings(object):
 
     def __init__(self, account):
         self.account = account
         self.workpath = path.join(path.dirname(path.realpath(__file__)), 'data')
         self.database_file = path.join(self.workpath, 'followers.db')
-        self.friends_file = path.join(self.workpath, self.account.get_username() + '_friends')
-        self.followers_file = path.join(self.workpath, self.account.get_username() + '_followers')
-
-        if not path.exists(self.workpath):
-            makedirs(self.workpath)
-
-        self.friends_from_db = None
-        self.followers_from_db = None
         
+    def __get_friends_file(self):
+        return path.join(self.workpath, self.account.get_username() + '_friends')
+
+    def __get_followers_file(self):
+        return path.join(self.workpath, self.account.get_username() + '_followers')
+
     def get_username_from_database(self, user_id):
         db = []
         if path.exists(self.database_file):
@@ -59,20 +61,16 @@ class Followings(object):
         return None
 
     def get_friends_from_database(self):
-        if self.friends_from_db == None:
-            if path.exists(self.friends_file):
-                self.friends_from_db = [line.strip() for line in open(self.friends_file)]
-            else:
-                self.friends_from_db = self.account.get_friends()
-        return self.friends_from_db
+        if path.exists(self.__get_friends_file()):
+            return [line.strip() for line in open(self.__get_friends_file())]
+        else:
+            return self.account.get_friends()
 
     def get_followers_from_database(self):
-        if self.followers_from_db == None:
-            if path.exists(self.followers_file):
-                self.followers_from_db = [line.strip() for line in open(self.followers_file)]
-            else:
-                self.followers_from_db = self.account.get_followers()
-        return self.followers_from_db
+        if path.exists(self.__get_followers_file()):
+            return [line.strip() for line in open(self.__get_followers_file())]
+        else:
+            return self.account.get_followers()
 
     def update_database(self, user_id_list):
         db = []
@@ -93,9 +91,12 @@ class Followings(object):
             [f.write('%s\n' % item) for item in db]
 
     def save_followings(self):
-        with open(self.friends_file, 'w') as f:
+        if not path.exists(self.workpath):
+            makedirs(self.workpath)
+
+        with open(self.__get_friends_file(), 'w') as f:
             [f.write('%s\n' % item) for item in self.account.get_friends()]
-        with open(self.followers_file, 'w') as f:
+        with open(self.__get_followers_file(), 'w') as f:
             [f.write('%s\n' % item) for item in self.account.get_followers()]
         self.update_database(self.account.get_friends() + self.account.get_followers())
 
@@ -105,11 +106,10 @@ def main():
     parser.add_argument('user', metavar='username', type=str, nargs='?', help='use the given username instead of yours')
     args = parser.parse_args()
 
-    account = TwitterAccount(consumer_key, consumer_secret, access_token, access_token_secret)
-    if args.user and account.get_username() != args.user:
-        account.username = args.user
+    followings = Followings(TwitterAccount(consumer_key, consumer_secret, access_token, access_token_secret))
 
-    followings = Followings(account)
+    if args.user and followings.account.get_username() != args.user:
+        followings.account.set_username(args.user)
     if args.create_db:
         followings.update_database(followings.account.get_friends() + followings.account.get_followers())
         exit()
@@ -130,7 +130,7 @@ def main():
 
     ####
 
-    print '@' + account.get_username(), '| Following:', len(followings.account.get_friends()), '| Followers:', len(followings.account.get_followers())
+    print '@' + followings.account.get_username(), '| Following:', len(followings.account.get_friends()), '| Followers:', len(followings.account.get_followers())
 
     print '\nUnfollowers(%d):' % len(unfollowers)
     print '\n'.join([followings.get_username_from_database(user_id) for user_id in unfollowers])
