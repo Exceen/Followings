@@ -1,7 +1,7 @@
 Followings
 ==========
 
-Followings makes it possible to see who (un)followed you and your friends on Twitter as well who you and your friends (un)followed with this script.
+Followings makes it possible to see who (un)followed you and your friends on Twitter as well who you and your friends (un)followed.
 
 usage: followings.py [-h] [-d] [username]
 
