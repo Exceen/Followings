@@ -10,3 +10,10 @@ Create your Access-Keys and replace the 4 keys in the script with the ones from 
 
 Tweepy is required to run this script:
 https://github.com/tweepy/tweepy
+
+===============
+AUTO Followings
+===============
+
+To use this one, you need to create a second Twitter account and add access keys for this account as well (dev_xxx). Add it as a cronjob and it will send a DM to your main account whenever there are some changes on your followers/followings.
+
