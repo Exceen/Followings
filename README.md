@@ -11,7 +11,6 @@ Create your Access-Keys and replace the 4 keys in the script with the ones from 
 Tweepy is required to run this script:
 https://github.com/tweepy/tweepy
 
-===============
 AUTO Followings
 ===============
 

@@ -1,5 +1,5 @@
 #!/usr/bin/python
-# (c) 2015 Exceen
+# (c) 2015-2017 Exceen
 import tweepy
 import argparse
 from os import makedirs, path
